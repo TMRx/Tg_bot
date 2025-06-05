@@ -1,47 +1,28 @@
+import os
 import asyncio
-import signal
+
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from dotenv import load_dotenv
-import os
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
-load_dotenv()
-TOKEN = os.getenv('TOKEN')
+from handlers.user_private import user_private_router
 
-if not TOKEN:
-    raise ValueError("TOKEN не знайдено в змінних середовища!")
 
-bot = Bot(
-    token=TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-)
+ALLOWED_UPDATES = ['message', 'edited_message']
 
+bot = Bot(token=os.getenv('TOKEN'))
 dp = Dispatcher()
 
-
-@dp.message(CommandStart()) 
-async def start_cmd(message: types.Message) -> None: 
-    await message.answer('Its command start')
-
-
-@dp.message()
-async def echo(message: types.Message) -> None:
-    text: str | None = message.text
-
-    if text in ['hi', 'привіт', 'hello', 'Привіт' ]:
-        await message.answer('І тобі привіт!')
-    elif text in ['Бувай', 'бувай']:
-        await message.answer('І тобі бувай!')
-    else:
-        await message.answer(message.text)        
-
+dp.include_router(user_private_router)
 
 async def main():
-    await dp.start_polling(bot)
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES)
 
 
 if __name__ == '__main__':
